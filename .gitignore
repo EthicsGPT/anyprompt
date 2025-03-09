@@ -1,2 +1,8 @@
-venv/
 __pycache__/
+venv/
+.DS_Store
+
+dist/
+anyprompt.egg-info/
+
+.env
