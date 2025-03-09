@@ -3,7 +3,6 @@ import os
 import json
 import threading
 import socket
-import webbrowser
 from functools import wraps
 from urllib.request import OpenerDirector
 from urllib.error import URLError
@@ -14,7 +13,7 @@ import atexit
 __version__ = "0.1.0"
 
 # Setup logging with a clean, colorful format
-logging.basicConfig(level=logging.INFO, format='📦 \033[1;36manyprompt:\033[0m %(message)s')
+logging.basicConfig(level=logging.WARNING, format='📦 \033[1;36manyprompt:\033[0m %(message)s')
 logger = logging.getLogger('anyprompt')
 
 # Global variables
@@ -115,10 +114,8 @@ def _start_server():
     _server_thread.start()
     
     # Print a nice message with the URL
-    logger.info(f"✨ anyprompt is running! View your prompts at \033[1;34m{_server_url}\033[0m")
-    
-    # Try to open the browser automatically after a short delay
-    threading.Timer(1.5, lambda: webbrowser.open(_server_url)).start()
+    print(f"📦 \033[1;36manyprompt\033[0m is active | view at \033[1;34m{_server_url}\033[0m\n")
+
 
 def _patch_http_libraries():
     """Patch various HTTP libraries to capture prompts."""

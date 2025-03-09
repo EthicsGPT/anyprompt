@@ -1,25 +1,21 @@
-# anyprompt 📝
+<h1 align="center">
+    <span style="font-size: 125px;">📦</span><br>
+    <span style="font-size: 125px;">anyprompt</span>
+  <br>
+  <a href="https://github.com/anyprompt/anyprompt">
+    <img src="https://img.shields.io/pypi/v/anyprompt.svg" alt="PyPI version">
+    <img src="https://img.shields.io/pypi/pyversions/anyprompt.svg" alt="Python versions">
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
+  </a>
+</h1>
 
-[![PyPI version](https://img.shields.io/pypi/v/anyprompt.svg)](https://pypi.org/project/anyprompt/)
-[![Python versions](https://img.shields.io/pypi/pyversions/anyprompt.svg)](https://pypi.org/project/anyprompt/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <img src="https://github.com/anyprompt/anyprompt/raw/main/docs/screenshot.png" alt="anyprompt screenshot">
+  <br>
+  <em>Automatic prompt monitoring for AI services</em>
+</p>
 
-**anyprompt** is a powerful yet simple tool that automatically monitors and visualizes LLM prompts and responses in your Python projects. With a single import, you get a beautiful web interface to inspect all prompts going to various AI providers.
-
-![anyprompt Screenshot](https://github.com/anyprompt/anyprompt/raw/main/docs/screenshot.png)
-
-## Features
-
-- **Zero Configuration**: Just import and it works!
-- **Automatic Detection**: Captures prompts from popular LLM libraries (OpenAI, Anthropic, etc.)
-- **Beautiful UI**: Modern, responsive web interface with dark mode support
-- **Compatible** with all major HTTP libraries:
-  - `requests`
-  - `httpx` (sync and async)
-  - `aiohttp`
-  - Python's built-in `urllib` and `http.client`
-- **Non-Intrusive**: Won't interfere with your existing code
-- **Real-time Updates**: The UI automatically refreshes as new prompts are captured
+---
 
 ## Installation
 
@@ -27,19 +23,17 @@
 pip install anyprompt
 ```
 
-For full functionality with all supported HTTP clients:
+## What is anyprompt?
 
-```bash
-pip install "anyprompt[all]"
-```
+**anyprompt** is a lightweight tool that automatically captures and visualizes LLM prompts in your Python projects. With a single import, you get a beautiful web interface to inspect all communications with AI providers.
 
 ## Quick Start
 
-Just import anyprompt in your code, and it will automatically start capturing prompts:
+### Just import and go!
 
 ```python
 from openai import OpenAI
-import anyprompt  # Automatically starts the web interface at http://localhost:2400
+import anyprompt  # Automatically starts at http://localhost:2400
 
 client = OpenAI()
 
@@ -51,46 +45,41 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-That's it! When you import `anyprompt`, it will print a message like:
+That's it! Visit http://localhost:2400 in your browser to see your captured prompts.
 
-```
-📦 anyprompt: ✨ anyprompt is running! View your prompts at http://localhost:2400
-```
+## Compatibility
 
-Click on the link or navigate to http://localhost:2400 in your browser to see your captured prompts.
+| Library | Status |
+|-------------------|--------|
+| **requests** | ✅ Supported |
+| **httpx** | ✅ Supported |
+| **aiohttp** | ✅ Supported |
+| **urllib** | ✅ Supported |
+| **http.client** | ✅ Supported |
 
-## How It Works
+## Supported AI Services
 
-anyprompt works by patching popular HTTP libraries to intercept and record API calls to LLM services. When a request is made to a known LLM service, anyprompt captures the prompt data and displays it in the web interface.
-
-The captured prompts are stored in a `prompts/prompts.json` file in your current working directory, so they persist between runs. You can clear this history anytime through the web interface.
-
-## Supported Services
-
-anyprompt can detect prompts sent to:
-
-- OpenAI (including chat, completions, embeddings)
+- OpenAI (chat, completions, embeddings)
 - Anthropic
 - Cohere
 - AI21
 - Hugging Face Inference API
-- Any other API that uses standard HTTP requests with a similar format
+- Any other API using standard HTTP requests
+
+## Common Use Cases
+
+- **Debugging**: See exactly what's being sent to AI services
+- **Prompt Engineering**: Refine your prompts by reviewing past interactions
+- **Team Collaboration**: Share prompt history with team members
+- **Cost Monitoring**: Track usage of AI APIs
+- **Education**: Learn from examples of effective prompts
 
 ## Privacy & Security
 
-- anyprompt only runs locally on your machine
-- No data is ever sent to external servers
-- All captured prompts are stored locally in your project directory
-- The web interface is only accessible from your local machine
+- Runs locally on your machine
+- No data sent to external servers
+- All prompts stored locally in your project directory
 
-## Contributing
+## ⭐ Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-Made with ❤️ by the anyprompt team

@@ -3,98 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>anyprompt - Prompt Inspector</title>
+    <title>anyprompt</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&family=JetBrains+Mono:wght@400;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <style>
-        /* Custom styling */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            --card-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+            --glow-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #121212;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
         .logo {
-            font-family: 'Courier New', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-weight: bold;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: var(--glow-shadow);
+            letter-spacing: -1px;
         }
+        
         .prompt-card {
-            transition: all 0.2s ease-in-out;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
         }
-        .prompt-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        
+        .prompt-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary-gradient);
+            z-index: 1;
         }
+        
         pre {
+            font-family: 'JetBrains Mono', monospace;
             white-space: pre-wrap;
             word-wrap: break-word;
+            font-size: 0.875rem;
         }
+        
         .code-block {
             max-height: 400px;
             overflow-y: auto;
-            background-color: #1a202c;
+            background-color: rgba(15, 23, 42, 0.8);
             color: #e2e8f0;
-            border-radius: 0.375rem;
-            padding: 1rem;
+            border-radius: 12px;
+            padding: 1.25rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99, 102, 241, 0.5) rgba(15, 23, 42, 0.8);
         }
-        /* Dark mode toggle */
+        
+        .code-block::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .code-block::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 12px;
+        }
+        
+        .code-block::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 12px;
+        }
+        
+        /* Custom button styling */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            opacity: 0;
+            z-index: -1;
+            transition: opacity 0.3s ease;
+        }
+        
+        .btn:hover::before {
+            opacity: 1;
+        }
+        
+        /* Toggle switch styling */
         .toggle-checkbox:checked {
             right: 0;
-            border-color: #68D391;
+            border-color: #8B5CF6;
+            background-color: #6366F1;
         }
+        
         .toggle-checkbox:checked + .toggle-label {
-            background-color: #68D391;
+            background: var(--primary-gradient);
         }
+        
         /* Loading animation */
         .loader {
-            border-top-color: #4F46E5;
-            -webkit-animation: spinner 1.5s linear infinite;
-            animation: spinner 1.5s linear infinite;
+            border-top-color: #6366F1;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+            -webkit-animation: spinner 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+            animation: spinner 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
         }
+        
         @-webkit-keyframes spinner {
             0% { -webkit-transform: rotate(0deg); }
             100% { -webkit-transform: rotate(360deg); }
         }
+        
         @keyframes spinner {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Tab styling */
+        .tab-btn {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary-gradient);
+        }
+        
+        /* Particle background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Floating elements */
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        /* Glow effects */
+        .glow {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.5);
+        }
+        
+        /* Stats counter */
+        .stat-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        /* Method badge styling */
+        .method-badge {
+            position: relative;
+            overflow: hidden;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        /* Timeline styling */
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--primary-gradient);
+            transform: translateX(-50%);
+        }
+        
+        /* Tooltip styling */
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.5rem;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
     </style>
 </head>
-<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-    <div class="container mx-auto px-4 py-8">
+<body class="text-gray-100 transition-colors duration-500">
+    <!-- Particle background -->
+    <div class="particles" id="particles-js"></div>
+    
+    <!-- Main container -->
+    <div class="container mx-auto px-4 py-8 relative">
+        <!-- Decorative elements -->
+        <div class="absolute top-14 left-10 w-24 h-24 bg-purple-500 rounded-full filter blur-3xl opacity-10 animate-pulse"></div>
+        
         <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-10">
-            <div class="flex items-center mb-4 md:mb-0">
-                <span class="logo text-3xl text-indigo-600 dark:text-indigo-400">anyprompt</span>
-                <span class="ml-2 px-2 py-1 text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 rounded-md">v0.1.0</span>
+        <header class="relative z-10 flex flex-col md:flex-row justify-between items-center mb-16 py-6">
+            <div class="flex items-center mb-6 md:mb-0 w-1/2">
+                <div class="mr-4">
+                    <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#header-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="url(#header-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="url(#header-gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="header-gradient" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#6366F1"/>
+                                <stop offset="1" stop-color="#8B5CF6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-4xl md:text-5xl mb-1">anyprompt</h1>
+                    <p class="text-indigo-300 text-sm">prompts</p>
+                </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <button id="clearPromptsBtn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors duration-200">
-                    Clear All Prompts
-                </button>
-                <div class="flex items-center">
-                    <span class="mr-3 text-sm text-gray-600 dark:text-gray-400">Dark Mode</span>
-                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
-                        <input id="darkModeToggle" type="checkbox" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                        <label for="darkModeToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+            
+            <!-- Stats section moved to center -->
+            <div class="w-1/2 flex justify-end">
+                <div class="flex justify-center items-center px-6 py-3 rounded-xl bg-indigo-900/30 backdrop-blur-sm">
+                    <div class="text-center">
+                        <p class="stat-counter text-4xl mb-1" id="promptCount">0</p>
+                        <p class="text-xs text-indigo-300 uppercase tracking-wider">requests</p>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Prompts Container -->
-        <div id="promptsContainer" class="grid grid-cols-1 gap-6">
-            <!-- Loading indicator -->
-            <div id="loadingIndicator" class="flex justify-center items-center py-20">
-                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
-                <p class="ml-4 text-gray-600 dark:text-gray-400">Loading prompts...</p>
+        <!-- Search and filter bar -->
+        <div class="relative z-10 mb-6">
+            <div class="flex justify-center">
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="Search..." 
+                           class="w-full pl-12 pr-4 py-3 bg-transparent rounded-xl 
+                                  text-gray-100 placeholder-gray-500 focus:outline-none">
+                </div>
             </div>
-            
+        </div>
+
+        <!-- Prompts Container -->
+        <div id="promptsContainer" class="relative grid grid-cols-1 gap-8 z-10">
             <!-- No prompts message (hidden by default) -->
-            <div id="noPromptsMessage" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center" role="alert">
-                <svg class="mx-auto h-16 w-16 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                </svg>
-                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No prompts captured yet</h3>
-                <p class="mt-2 text-gray-600 dark:text-gray-400">
-                    Start making API calls to LLM services (OpenAI, Anthropic, etc.) and your prompts will appear here.
-                </p>
-                <div class="mt-6 bg-gray-100 dark:bg-gray-700 rounded-md p-4">
-                    <pre class="text-sm text-gray-800 dark:text-gray-300"><code>from openai import OpenAI
+            <div id="noPromptsMessage" class="hidden animate__animated animate__fadeIn">
+                <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-900/40 to-purple-900/40 backdrop-blur-md border p-10 text-center">
+                    <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-purple-500 rounded-full filter blur-3xl opacity-10"></div>
+                    <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-indigo-500 rounded-full filter blur-3xl opacity-10"></div>
+                    
+                    <svg class="mx-auto h-24 w-24 text-indigo-400 opacity-80 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                    </svg>
+                    
+                    <h3 class="text-2xl font-bold text-white mb-3">No prompts captured yet</h3>
+                    <p class="text-indigo-300 text-lg mb-8 max-w-2xl mx-auto">
+                        Start making API calls to LLM services and watch as anyprompt automatically captures and visualizes your conversations.
+                    </p>
+                    
+                    <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        <div class="bg-indigo-900/50 rounded-xl p-6 backdrop-blur-sm border border-indigo-800/50">
+                            <h4 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                                </svg>
+                                Quick Example
+                            </h4>
+                            <pre class="text-sm text-indigo-200 text-left"><code>from openai import OpenAI
 import anyprompt
 
 client = OpenAI()
@@ -102,40 +326,85 @@ response = client.chat.completions.create(
     model="gpt-4o-mini",
     messages=[{"role": "user", "content": "Hello, world!"}]
 )</code></pre>
+                        </div>
+                        
+                        <div class="bg-indigo-900/50 rounded-xl p-6 backdrop-blur-sm border border-indigo-800/50">
+                            <h4 class="text-lg font-semibold text-white mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Supported APIs
+                            </h4>
+                            <ul class="text-left text-indigo-200 space-y-2">
+                                <li class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    OpenAI (GPT models)
+                                </li>
+                                <li class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    Anthropic (Claude models)
+                                </li>
+                                <li class="flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    And many more!
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Templates -->
     <template id="promptCardTemplate">
-        <div class="prompt-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="prompt-card animate__animated animate__fadeIn relative">
             <div class="p-6">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white prompt-url"></h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 prompt-timestamp"></p>
+                <div class="flex flex-col md:flex-row justify-between items-start mb-4">
+                    <div class="mb-3 md:mb-0 cursor-pointer prompt-header" onclick="togglePromptContent(this)">
+                        <div class="flex items-center">
+                            <div class="method-badge px-3 py-1 text-xs font-semibold rounded-md mr-3 prompt-method"></div>
+                            <h3 class="text-xl font-medium text-white prompt-url"></h3>
+                        </div>
+                        <div class="flex items-center mt-2 text-sm text-indigo-300">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="prompt-timestamp"></span>
+                        </div>
                     </div>
-                    <span class="px-2 py-1 text-xs font-semibold rounded-md prompt-method"></span>
-                </div>
-                <div class="mt-4">
-                    <button class="toggle-json-btn w-full text-left px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200">
-                        View Prompt Details
+                    <button class="show-prompt-btn bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 flex items-center shadow-lg hover:shadow-xl transform ml-auto">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        View Details
                     </button>
-                    <div class="json-content mt-4 hidden">
-                        <div class="tabs flex border-b border-gray-200 dark:border-gray-700 mb-4">
-                            <button class="tab-btn active px-4 py-2 text-sm font-medium" data-tab="body">Body</button>
-                            <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="headers">Headers</button>
-                            <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="raw">Raw</button>
-                        </div>
-                        <div class="tab-content" data-tab="body">
-                            <pre class="code-block"><code class="prompt-body"></code></pre>
-                        </div>
-                        <div class="tab-content hidden" data-tab="headers">
-                            <pre class="code-block"><code class="prompt-headers"></code></pre>
-                        </div>
-                        <div class="tab-content hidden" data-tab="raw">
-                            <pre class="code-block"><code class="prompt-raw"></code></pre>
+                </div>
+                <div class="prompt-content hidden">
+                    <div class="flex flex-grow w-full">
+                        <div class="mt-4 w-full">
+                            <div class="json-content mt-4 w-full">
+                                <div class="tabs flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                                    <button class="tab-btn active px-4 py-2 text-sm font-medium" data-tab="body">Body</button>
+                                    <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="headers">Headers</button>
+                                    <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="raw">Raw</button>
+                                </div>
+                                <div class="tab-content" data-tab="body">
+                                    <pre class="code-block"><code class="prompt-body"></code></pre>
+                                </div>
+                                <div class="tab-content hidden" data-tab="headers">
+                                    <pre class="code-block"><code class="prompt-headers"></code></pre>
+                                </div>
+                                <div class="tab-content hidden" data-tab="raw">
+                                    <pre class="code-block"><code class="prompt-raw"></code></pre>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -146,25 +415,13 @@ response = client.chat.completions.create(
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Dark mode toggle
-            const darkModeToggle = document.getElementById('darkModeToggle');
             const htmlEl = document.documentElement;
             
             // Check for dark mode preference
             if (localStorage.getItem('darkMode') === 'true' || 
                 (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 htmlEl.classList.add('dark');
-                darkModeToggle.checked = true;
             }
-            
-            darkModeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    htmlEl.classList.add('dark');
-                    localStorage.setItem('darkMode', 'true');
-                } else {
-                    htmlEl.classList.remove('dark');
-                    localStorage.setItem('darkMode', 'false');
-                }
-            });
 
             // Fetch prompts
             fetchPrompts();
@@ -180,6 +437,32 @@ response = client.chat.completions.create(
             setInterval(fetchPrompts, 5000); // Refresh every 5 seconds
         });
 
+        function togglePromptContent(element) {
+            const card = element.closest('.prompt-card');
+            const content = card.querySelector('.prompt-content');
+            const showBtn = card.querySelector('.show-prompt-btn');
+            
+            content.classList.toggle('hidden');
+            
+            // Update button text based on content visibility
+            if (content.classList.contains('hidden')) {
+                showBtn.innerHTML = `
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                    View Details
+                `;
+            } else {
+                showBtn.innerHTML = `
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Hide Details
+                `;
+            }
+        }
+
         function fetchPrompts() {
             fetch('/api/prompts')
                 .then(response => response.json())
@@ -190,7 +473,7 @@ response = client.chat.completions.create(
                     console.error('Error fetching prompts:', error);
                 })
                 .finally(() => {
-                    document.getElementById('loadingIndicator').classList.add('hidden');
+                    
                 });
         }
 
@@ -209,9 +492,38 @@ response = client.chat.completions.create(
             });
         }
 
+        function filterPrompts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const promptCards = document.querySelectorAll('.prompt-card');
+            
+            promptCards.forEach(card => {
+                if (card.innerHTML.toLowerCase().includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Add event listener for the search input
+        document.getElementById('searchInput').addEventListener('input', filterPrompts);
+
+        // Store the previous prompts for comparison
+        let previousPrompts = [];
+        
         function renderPrompts(prompts) {
             const container = document.getElementById('promptsContainer');
             const noPromptsMessage = document.getElementById('noPromptsMessage');
+            
+            document.getElementById('promptCount').textContent = prompts.length;
+
+            // Check if the prompts are the same as the previous render
+            if (JSON.stringify(prompts) === JSON.stringify(previousPrompts)) {
+                return; // Skip rendering if prompts haven't changed
+            }
+            
+            // Update previous prompts
+            previousPrompts = JSON.parse(JSON.stringify(prompts));
             
             // Clear previous content (except loading indicator and no prompts message)
             Array.from(container.children).forEach(child => {
@@ -228,18 +540,37 @@ response = client.chat.completions.create(
             noPromptsMessage.classList.add('hidden');
             
             // Reverse to show newest first
-            prompts.reverse().forEach(prompt => {
-                const promptCard = createPromptCard(prompt);
+            prompts.reverse().forEach((prompt, index) => {
+                const promptCard = createPromptCard(prompt, index === 0); // Only open the first one by default
                 container.appendChild(promptCard);
             });
 
-            // Add event listeners to toggle buttons
-            document.querySelectorAll('.toggle-json-btn').forEach(btn => {
+            // Add event listeners to show buttons
+            document.querySelectorAll('.show-prompt-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    const content = this.nextElementSibling;
+                    const card = this.closest('.prompt-card');
+                    const content = card.querySelector('.prompt-content');
+                    
+                    // Toggle content visibility
                     content.classList.toggle('hidden');
-                    this.textContent = content.classList.contains('hidden') ? 
-                        'View Prompt Details' : 'Hide Prompt Details';
+                    
+                    // Update button text based on content visibility
+                    if (content.classList.contains('hidden')) {
+                        this.innerHTML = `
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            View Details
+                        `;
+                    } else {
+                        this.innerHTML = `
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            Hide Details
+                        `;
+                    }
                 });
             });
 
@@ -266,7 +597,7 @@ response = client.chat.completions.create(
             });
         }
 
-        function createPromptCard(prompt) {
+        function createPromptCard(prompt, isFirst) {
             const template = document.getElementById('promptCardTemplate');
             const card = template.content.cloneNode(true);
             
@@ -314,6 +645,11 @@ response = client.chat.completions.create(
                     break;
                 default:
                     methodSpan.classList.add('bg-gray-100', 'text-gray-800', 'dark:bg-gray-700', 'dark:text-gray-200');
+            }
+            
+            // Show content for the first card by default
+            if (isFirst) {
+                card.querySelector('.prompt-content').classList.remove('hidden');
             }
             
             // Format JSON body
