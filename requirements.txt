@@ -1,0 +1,10 @@
+# Required dependencies
+# None required
+
+# Optional dependencies
+# Uncomment if you need these libraries
+# requests>=2.25.0
+# aiohttp>=3.8.0
+# httpx>=0.23.0
+# openai>=1.0.0
+# anthropic>=0.5.0

@@ -1,0 +1,11 @@
+LICENSE
+MANIFEST.in
+README.md
+pyproject.toml
+requirements.txt
+anyprompt/__init__.py
+anyprompt/test_anyprompt.py
+anyprompt.egg-info/PKG-INFO
+anyprompt.egg-info/SOURCES.txt
+anyprompt.egg-info/dependency_links.txt
+anyprompt.egg-info/top_level.txt
