@@ -10,7 +10,7 @@
 </h1>
 
 <p align="center">
-  <img src="screenshot.png" alt="anyprompt screenshot">
+  <img src="screenshot.png" alt="anyprompt screenshot" height="350">
   <br>
   <em>Automatic prompt monitoring for AI services</em>
 </p>
