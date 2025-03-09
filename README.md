@@ -10,7 +10,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://github.com/anyprompt/anyprompt/raw/main/docs/screenshot.png" alt="anyprompt screenshot">
+  <img src="screenshot.png" alt="anyprompt screenshot">
   <br>
   <em>Automatic prompt monitoring for AI services</em>
 </p>
@@ -65,14 +65,6 @@ That's it! Visit http://localhost:2400 in your browser to see your captured prom
 - AI21
 - Hugging Face Inference API
 - Any other API using standard HTTP requests
-
-## Common Use Cases
-
-- **Debugging**: See exactly what's being sent to AI services
-- **Prompt Engineering**: Refine your prompts by reviewing past interactions
-- **Team Collaboration**: Share prompt history with team members
-- **Cost Monitoring**: Track usage of AI APIs
-- **Education**: Learn from examples of effective prompts
 
 ## Privacy & Security
 
