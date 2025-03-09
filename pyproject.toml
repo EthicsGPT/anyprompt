@@ -5,24 +5,51 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "anyprompt"
 version = "0.1.0"
-description = "Inspect in-flight LLM prompts with 1 line of code"
+description = "Automatically inspect and visualize LLM prompts and responses in your Python projects"
 readme = "README.md"
 authors = [
-    {name = "anyprompt", email = "example@example.com"}
+    {name = "anyprompt", email = "info@anyprompt.ai"}
 ]
 license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-keywords = ["llm", "prompt", "ai", "openai", "debug"]
-dependencies = []
+keywords = ["llm", "prompt", "ai", "openai", "anthropic", "debug", "visualization"]
+dependencies = [
+    "fastapi>=0.95.0",
+    "uvicorn>=0.22.0",
+    "jinja2>=3.1.2",
+]
 requires-python = ">=3.7"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/anyprompt"
-Issues = "https://github.com/yourusername/anyprompt/issues"
+Homepage = "https://github.com/anyprompt/anyprompt"
+Documentation = "https://github.com/anyprompt/anyprompt"
+Issues = "https://github.com/anyprompt/anyprompt/issues"
+
+[project.optional-dependencies]
+all = [
+    "requests>=2.28.0",
+    "httpx>=0.24.0",
+    "aiohttp>=3.8.4",
+]
+
+[project.scripts]
+anyprompt = "anyprompt.cli:main"
 
 [tool.setuptools]
-packages = ["anyprompt"] 
+packages = ["anyprompt"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+anyprompt = ["templates/*.html", "static/*.css", "static/*.js"] 

@@ -1,3 +1,9 @@
 include LICENSE
 include README.md
-include requirements.txt 
+include requirements.txt
+recursive-include anyprompt/templates *.html
+recursive-include anyprompt/static *.css *.js
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store 

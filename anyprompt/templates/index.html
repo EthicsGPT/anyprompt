@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>anyprompt - Prompt Inspector</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Custom styling */
+        .logo {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        .prompt-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .prompt-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .code-block {
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 1rem;
+        }
+        /* Dark mode toggle */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #68D391;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #68D391;
+        }
+        /* Loading animation */
+        .loader {
+            border-top-color: #4F46E5;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @-webkit-keyframes spinner {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-10">
+            <div class="flex items-center mb-4 md:mb-0">
+                <span class="logo text-3xl text-indigo-600 dark:text-indigo-400">anyprompt</span>
+                <span class="ml-2 px-2 py-1 text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 rounded-md">v0.1.0</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="clearPromptsBtn" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors duration-200">
+                    Clear All Prompts
+                </button>
+                <div class="flex items-center">
+                    <span class="mr-3 text-sm text-gray-600 dark:text-gray-400">Dark Mode</span>
+                    <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                        <input id="darkModeToggle" type="checkbox" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                        <label for="darkModeToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Prompts Container -->
+        <div id="promptsContainer" class="grid grid-cols-1 gap-6">
+            <!-- Loading indicator -->
+            <div id="loadingIndicator" class="flex justify-center items-center py-20">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+                <p class="ml-4 text-gray-600 dark:text-gray-400">Loading prompts...</p>
+            </div>
+            
+            <!-- No prompts message (hidden by default) -->
+            <div id="noPromptsMessage" class="hidden bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center" role="alert">
+                <svg class="mx-auto h-16 w-16 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                </svg>
+                <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No prompts captured yet</h3>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">
+                    Start making API calls to LLM services (OpenAI, Anthropic, etc.) and your prompts will appear here.
+                </p>
+                <div class="mt-6 bg-gray-100 dark:bg-gray-700 rounded-md p-4">
+                    <pre class="text-sm text-gray-800 dark:text-gray-300"><code>from openai import OpenAI
+import anyprompt
+
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Hello, world!"}]
+)</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <template id="promptCardTemplate">
+        <div class="prompt-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white prompt-url"></h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 prompt-timestamp"></p>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-md prompt-method"></span>
+                </div>
+                <div class="mt-4">
+                    <button class="toggle-json-btn w-full text-left px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200">
+                        View Prompt Details
+                    </button>
+                    <div class="json-content mt-4 hidden">
+                        <div class="tabs flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                            <button class="tab-btn active px-4 py-2 text-sm font-medium" data-tab="body">Body</button>
+                            <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="headers">Headers</button>
+                            <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="raw">Raw</button>
+                        </div>
+                        <div class="tab-content" data-tab="body">
+                            <pre class="code-block"><code class="prompt-body"></code></pre>
+                        </div>
+                        <div class="tab-content hidden" data-tab="headers">
+                            <pre class="code-block"><code class="prompt-headers"></code></pre>
+                        </div>
+                        <div class="tab-content hidden" data-tab="raw">
+                            <pre class="code-block"><code class="prompt-raw"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Dark mode toggle
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const htmlEl = document.documentElement;
+            
+            // Check for dark mode preference
+            if (localStorage.getItem('darkMode') === 'true' || 
+                (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                htmlEl.classList.add('dark');
+                darkModeToggle.checked = true;
+            }
+            
+            darkModeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    htmlEl.classList.add('dark');
+                    localStorage.setItem('darkMode', 'true');
+                } else {
+                    htmlEl.classList.remove('dark');
+                    localStorage.setItem('darkMode', 'false');
+                }
+            });
+
+            // Fetch prompts
+            fetchPrompts();
+
+            // Clear prompts button
+            document.getElementById('clearPromptsBtn').addEventListener('click', function() {
+                if (confirm('Are you sure you want to clear all prompts? This cannot be undone.')) {
+                    clearPrompts();
+                }
+            });
+
+            // Setup auto-refresh
+            setInterval(fetchPrompts, 5000); // Refresh every 5 seconds
+        });
+
+        function fetchPrompts() {
+            fetch('/api/prompts')
+                .then(response => response.json())
+                .then(data => {
+                    renderPrompts(data.prompts);
+                })
+                .catch(error => {
+                    console.error('Error fetching prompts:', error);
+                })
+                .finally(() => {
+                    document.getElementById('loadingIndicator').classList.add('hidden');
+                });
+        }
+
+        function clearPrompts() {
+            fetch('/api/prompts', {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    renderPrompts([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing prompts:', error);
+            });
+        }
+
+        function renderPrompts(prompts) {
+            const container = document.getElementById('promptsContainer');
+            const noPromptsMessage = document.getElementById('noPromptsMessage');
+            
+            // Clear previous content (except loading indicator and no prompts message)
+            Array.from(container.children).forEach(child => {
+                if (!child.id || (child.id !== 'loadingIndicator' && child.id !== 'noPromptsMessage')) {
+                    container.removeChild(child);
+                }
+            });
+            
+            if (prompts.length === 0) {
+                noPromptsMessage.classList.remove('hidden');
+                return;
+            }
+            
+            noPromptsMessage.classList.add('hidden');
+            
+            // Reverse to show newest first
+            prompts.reverse().forEach(prompt => {
+                const promptCard = createPromptCard(prompt);
+                container.appendChild(promptCard);
+            });
+
+            // Add event listeners to toggle buttons
+            document.querySelectorAll('.toggle-json-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    content.classList.toggle('hidden');
+                    this.textContent = content.classList.contains('hidden') ? 
+                        'View Prompt Details' : 'Hide Prompt Details';
+                });
+            });
+
+            // Add event listeners to tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabName = this.getAttribute('data-tab');
+                    const card = this.closest('.prompt-card');
+                    
+                    // Update active tab
+                    card.querySelectorAll('.tab-btn').forEach(tb => {
+                        tb.classList.remove('active', 'text-indigo-600', 'dark:text-indigo-400', 'border-b-2', 'border-indigo-600', 'dark:border-indigo-400');
+                        tb.classList.add('text-gray-500', 'dark:text-gray-400');
+                    });
+                    this.classList.add('active', 'text-indigo-600', 'dark:text-indigo-400', 'border-b-2', 'border-indigo-600', 'dark:border-indigo-400');
+                    this.classList.remove('text-gray-500', 'dark:text-gray-400');
+                    
+                    // Show selected tab content
+                    card.querySelectorAll('.tab-content').forEach(tc => {
+                        tc.classList.add('hidden');
+                    });
+                    card.querySelector(`.tab-content[data-tab="${tabName}"]`).classList.remove('hidden');
+                });
+            });
+        }
+
+        function createPromptCard(prompt) {
+            const template = document.getElementById('promptCardTemplate');
+            const card = template.content.cloneNode(true);
+            
+            // Format the URL to keep it compact
+            let displayUrl = prompt.url;
+            try {
+                const url = new URL(prompt.url);
+                displayUrl = url.origin + url.pathname;
+                if (displayUrl.length > 60) {
+                    displayUrl = displayUrl.substring(0, 57) + '...';
+                }
+            } catch (e) {
+                // In case URL parsing fails, use the original URL
+            }
+            
+            card.querySelector('.prompt-url').textContent = displayUrl;
+            
+            // Format timestamp
+            let timestamp = "Unknown time";
+            if (prompt.timestamp) {
+                try {
+                    const date = new Date(prompt.timestamp);
+                    timestamp = date.toLocaleString();
+                } catch (e) {
+                    // Use default
+                }
+            }
+            card.querySelector('.prompt-timestamp').textContent = timestamp;
+            
+            // Set method with appropriate color
+            const methodSpan = card.querySelector('.prompt-method');
+            methodSpan.textContent = prompt.method;
+            switch (prompt.method.toUpperCase()) {
+                case 'GET':
+                    methodSpan.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900', 'dark:text-green-200');
+                    break;
+                case 'POST':
+                    methodSpan.classList.add('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900', 'dark:text-blue-200');
+                    break;
+                case 'PUT':
+                    methodSpan.classList.add('bg-yellow-100', 'text-yellow-800', 'dark:bg-yellow-900', 'dark:text-yellow-200');
+                    break;
+                case 'DELETE':
+                    methodSpan.classList.add('bg-red-100', 'text-red-800', 'dark:bg-red-900', 'dark:text-red-200');
+                    break;
+                default:
+                    methodSpan.classList.add('bg-gray-100', 'text-gray-800', 'dark:bg-gray-700', 'dark:text-gray-200');
+            }
+            
+            // Format JSON body
+            try {
+                let body = prompt.body;
+                
+                // Try to parse as JSON if it's a string
+                if (typeof body === 'string') {
+                    try {
+                        body = JSON.parse(body);
+                    } catch (e) {
+                        // Keep it as a string if parsing fails
+                    }
+                }
+                
+                // Pretty print the body
+                const formattedBody = JSON.stringify(body, null, 2);
+                card.querySelector('.prompt-body').textContent = formattedBody;
+                
+                // Format headers
+                const formattedHeaders = JSON.stringify(prompt.headers || {}, null, 2);
+                card.querySelector('.prompt-headers').textContent = formattedHeaders;
+                
+                // Raw data
+                card.querySelector('.prompt-raw').textContent = JSON.stringify(prompt, null, 2);
+            } catch (e) {
+                card.querySelector('.prompt-body').textContent = "Error formatting content: " + e.message;
+                card.querySelector('.prompt-headers').textContent = "Error formatting headers";
+                card.querySelector('.prompt-raw').textContent = "Error formatting raw data";
+            }
+            
+            return card.firstElementChild;
+        }
+    </script>
+</body>
+</html> 

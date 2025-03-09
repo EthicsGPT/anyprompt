@@ -3,9 +3,15 @@ MANIFEST.in
 README.md
 pyproject.toml
 requirements.txt
+setup.py
 anyprompt/__init__.py
-anyprompt/test_anyprompt.py
+anyprompt/cli.py
+anyprompt/server.py
 anyprompt.egg-info/PKG-INFO
 anyprompt.egg-info/SOURCES.txt
 anyprompt.egg-info/dependency_links.txt
+anyprompt.egg-info/entry_points.txt
+anyprompt.egg-info/requires.txt
 anyprompt.egg-info/top_level.txt
+anyprompt/static/styles.css
+anyprompt/templates/index.html
