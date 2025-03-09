@@ -10,7 +10,7 @@
 </h1>
 
 <p align="center">
-  <img src="screenshot.png" alt="anyprompt screenshot">
+  <img src="screenshot.png" alt="anyprompt screenshot" height="350">
   <br>
   <em>Automatic prompt monitoring for AI services</em>
 </p>
@@ -51,20 +51,52 @@ That's it! Visit http://localhost:2400 in your browser to see your captured prom
 
 | Library | Status |
 |-------------------|--------|
+| **browser-use** | ✅ Supported |
+| **langchain** | ✅ Supported |
+| **openai** | ✅ Supported |
+| **anthropic** | ✅ Supported |
 | **requests** | ✅ Supported |
 | **httpx** | ✅ Supported |
 | **aiohttp** | ✅ Supported |
 | **urllib** | ✅ Supported |
 | **http.client** | ✅ Supported |
 
-## Supported AI Services
+## Advanced Examples
 
-- OpenAI (chat, completions, embeddings)
-- Anthropic
-- Cohere
-- AI21
-- Hugging Face Inference API
-- Any other API using standard HTTP requests
+### LangChain Integration
+
+```python
+import anyprompt  # This automatically starts the anyprompt server
+
+from langchain_openai import ChatOpenAI
+from langchain.schema import HumanMessage
+
+# Initialize the LLM
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+
+# Make a call - anyprompt will automatically capture it
+response = llm.invoke([HumanMessage(content="What's the capital of France?")])
+print(response.content)
+```
+
+### browser-use Integration
+
+```python
+import anyprompt  # This automatically starts the anyprompt server
+
+from langchain_openai import ChatOpenAI
+from browser_use import Agent
+import asyncio
+
+async def main():
+    agent = Agent(
+        task="Compare the price of gpt-4o and DeepSeek-V3",
+        llm=ChatOpenAI(model="gpt-4o"),
+    )
+    await agent.run()
+
+asyncio.run(main())
+```
 
 ## Privacy & Security
 

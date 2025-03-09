@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anyprompt"
-version = "0.1.0"
+version = "0.2.0"
 description = "Automatically inspect and visualize LLM prompts and responses in your Python projects"
 readme = "README.md"
 authors = [
