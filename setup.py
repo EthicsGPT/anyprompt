@@ -8,7 +8,7 @@ from setuptools import setup
 setup(
     name="anyprompt",
     description="This package uses pyproject.toml - please see that file for configuration information.",
-    version="0.2.0",
+    version="0.3.0",
     packages=["anyprompt"],
     install_requires=[
         "fastapi>=0.95.0",

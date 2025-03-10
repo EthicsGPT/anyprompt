@@ -10,7 +10,7 @@ import http.client
 from pathlib import Path
 import atexit
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 # Setup logging with a clean, colorful format
 logging.basicConfig(level=logging.WARNING, format='📦 \033[1;36manyprompt:\033[0m %(message)s')
