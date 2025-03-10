@@ -9,10 +9,6 @@
   </a>
 </h1>
 
-<p align="center">
-  <img src="screenshot.png" alt="anyprompt screenshot" height="350">
-</p>
-
 ---
 
 ## Installation
