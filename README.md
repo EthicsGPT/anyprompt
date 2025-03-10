@@ -10,7 +10,7 @@
 </h1>
 
 <p align="center">
-  <img src="https://i.imgur.com/mYwYC9V.png" alt="anyprompt" height="350">
+  <img src="https://i.imgur.com/mYwYC9V.png" alt="anyprompt" width="500">
 </p>
 
 ---
