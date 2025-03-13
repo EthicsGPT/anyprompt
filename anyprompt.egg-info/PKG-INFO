@@ -1,8 +1,8 @@
 Metadata-Version: 2.2
 Name: anyprompt
-Version: 0.3.0
+Version: 0.4.0
 Summary: Automatically inspect and visualize LLM prompts and responses in your Python projects
-Author-email: anyprompt <info@anyprompt.ai>
+Author-email: anyprompt <ethan@ethicsgpt.ai>
 License: MIT
 Project-URL: Homepage, https://github.com/anyprompt/anyprompt
 Project-URL: Documentation, https://github.com/anyprompt/anyprompt
@@ -41,6 +41,10 @@ Dynamic: requires-python
     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
   </a>
 </h1>
+
+<p align="center">
+  <img src="https://i.imgur.com/mYwYC9V.png" alt="anyprompt" width="500">
+</p>
 
 ---
 

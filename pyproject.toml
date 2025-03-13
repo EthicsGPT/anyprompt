@@ -8,7 +8,7 @@ version = "0.4.0"
 description = "Automatically inspect and visualize LLM prompts and responses in your Python projects"
 readme = "README.md"
 authors = [
-    {name = "anyprompt", email = ""}
+    {name = "anyprompt", email = "ethan@ethicsgpt.ai"}
 ]
 license = {text = "MIT"}
 classifiers = [
