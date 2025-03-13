@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anyprompt"
-version = "0.3.0"
+version = "0.4.0"
 description = "Automatically inspect and visualize LLM prompts and responses in your Python projects"
 readme = "README.md"
 authors = [
-    {name = "anyprompt", email = "info@anyprompt.ai"}
+    {name = "anyprompt", email = ""}
 ]
 license = {text = "MIT"}
 classifiers = [

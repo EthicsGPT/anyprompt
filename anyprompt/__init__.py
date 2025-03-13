@@ -9,8 +9,9 @@ from urllib.error import URLError
 import http.client
 from pathlib import Path
 import atexit
+import uuid
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 # Setup logging with a clean, colorful format
 logging.basicConfig(level=logging.WARNING, format='📦 \033[1;36manyprompt:\033[0m %(message)s')
@@ -21,6 +22,7 @@ _server_thread = None
 _server_port = 2400  # Default port
 _prompts_list = []
 _server_url = None
+_request_ids = {}  # Dictionary to map request objects to their IDs
 
 def _find_available_port(start_port=2400, max_attempts=10):
     """Find an available port starting from start_port."""
@@ -64,17 +66,23 @@ def _save_prompts():
     except Exception as e:
         logger.warning(f"Failed to save prompts file: {e}")
 
-def _print_http_request(method, url, headers=None, body=None):
+def _print_http_request(method, url, headers=None, body=None, request_obj=None):
     """Log and record HTTP requests that might contain prompts."""
-    global _prompts_list
+    global _prompts_list, _request_ids
+    
+    # Generate a unique ID for this request
+    request_id = str(uuid.uuid4())
     
     # Create a record of this request
     request_record = {
+        'id': request_id,
         'method': method,
         'url': url,
         'headers': dict(headers) if headers else None,
         'body': body.decode('utf-8') if isinstance(body, bytes) else body,
-        'timestamp': import_time_iso
+        'timestamp': datetime.now().isoformat(),
+        'has_response': False,
+        'response': None
     }
     
     # Extract and log relevant prompt information
@@ -92,7 +100,58 @@ def _print_http_request(method, url, headers=None, body=None):
     _prompts_list.append(request_record)
     _save_prompts()
     
-    return True  # Always allow requests
+    # If we have a request object, store its ID for later linking with response
+    if request_obj is not None:
+        _request_ids[id(request_obj)] = request_id
+    
+    return request_id
+
+def _print_http_response(response_obj, status_code, headers=None, body=None, request_id=None):
+    """Log and record HTTP responses."""
+    global _prompts_list
+    
+    # Try to find the matching request
+    if request_id is None and response_obj is not None:
+        request_id = _request_ids.pop(id(response_obj), None)
+    
+    # If we found a matching request, update it with response data
+    if request_id:
+        for i, entry in enumerate(_prompts_list):
+            if entry.get('id') == request_id:
+                response_data = {
+                    'status_code': status_code,
+                    'headers': dict(headers) if headers else None,
+                    'body': body.decode('utf-8') if isinstance(body, bytes) else body,
+                    'timestamp': datetime.now().isoformat()
+                }
+                
+                _prompts_list[i]['has_response'] = True
+                _prompts_list[i]['response'] = response_data
+                
+                # Log a message for LLM API responses
+                if body:
+                    try:
+                        body_content = json.loads(body.decode('utf-8')) if isinstance(body, bytes) else body
+                        if isinstance(body_content, dict):
+                            # Check for common LLM API response fields
+                            if any(key in body_content for key in ['choices', 'completion', 'content']):
+                                logger.info(f"🤖 Captured response from {_prompts_list[i]['url']}")
+                    except:
+                        pass
+                
+                _save_prompts()
+                break
+    else:
+        # If we don't have a request_id, still log this as a standalone response
+        response_record = {
+            'type': 'standalone_response',
+            'status_code': status_code,
+            'headers': dict(headers) if headers else None,
+            'body': body.decode('utf-8') if isinstance(body, bytes) else body,
+            'timestamp': datetime.now().isoformat()
+        }
+        _prompts_list.append(response_record)
+        _save_prompts()
 
 def _start_server():
     """Start the FastAPI server in a background thread."""
@@ -118,21 +177,41 @@ def _start_server():
 
 
 def _patch_http_libraries():
-    """Patch various HTTP libraries to capture prompts."""
+    """Patch various HTTP libraries to capture prompts and responses."""
     # Patch urllib.request
     original_open = OpenerDirector._open
     @wraps(original_open)
     def patched_open(self, req, *args, **kwargs):
+        body = None
+        if hasattr(req, 'data') and req.data:
+            body = req.data
+        
+        request_id = None
         if hasattr(req, 'get_method') and hasattr(req, 'full_url'):
-            body = None
-            if hasattr(req, 'data') and req.data:
-                body = req.data
-            _print_http_request(req.get_method(), req.full_url, headers=req.headers, body=body)
-        return original_open(self, req, *args, **kwargs)
+            request_id = _print_http_request(req.get_method(), req.full_url, headers=req.headers, body=body, request_obj=req)
+        
+        response = original_open(self, req, *args, **kwargs)
+        
+        # Capture response data
+        if request_id and hasattr(response, 'code') and hasattr(response, 'headers'):
+            try:
+                response_body = response.read()
+                # Put the data back so the caller can use it
+                if hasattr(response, 'fp'):
+                    from io import BytesIO
+                    response.fp = BytesIO(response_body)
+                _print_http_response(response, response.code, headers=response.headers, body=response_body, request_id=request_id)
+            except:
+                # If we can't read the response, at least log the status
+                _print_http_response(response, response.code, headers=response.headers, request_id=request_id)
+        
+        return response
     OpenerDirector._open = patched_open
 
     # Patch http.client
     original_request = http.client.HTTPConnection.request
+    original_getresponse = http.client.HTTPConnection.getresponse
+    
     @wraps(original_request)
     def patched_request(self, method, url, body=None, headers=None, **kwargs):
         host = self.host
@@ -141,9 +220,54 @@ def _patch_http_libraries():
         # Determine scheme (http vs https)
         scheme = "https" if self.__class__.__name__ == "HTTPSConnection" else "http"
         full_url = f"{scheme}://{host}{url}"
-        _print_http_request(method, full_url, headers=headers, body=body)
+        
+        request_id = _print_http_request(method, full_url, headers=headers, body=body, request_obj=self)
+        self._anyprompt_request_id = request_id  # Store request_id on the connection object
+        
         return original_request(self, method, url, body=body, headers=headers, **kwargs)
+    
+    @wraps(original_getresponse)
+    def patched_getresponse(self, **kwargs):
+        response = original_getresponse(self, **kwargs)
+        
+        # Get request_id if it was stored during the request
+        request_id = getattr(self, '_anyprompt_request_id', None)
+        
+        if request_id and hasattr(response, 'status') and hasattr(response, 'headers'):
+            try:
+                # Read response data while preserving the original behavior
+                response_data = response.read()
+                
+                # Create a new HTTPResponse with the same data
+                from io import BytesIO
+                sock = BytesIO(response_data)
+                
+                # Record the response
+                _print_http_response(response, response.status, headers=response.headers, 
+                                    body=response_data, request_id=request_id)
+                
+                # Build a new response object with our data
+                new_resp = http.client.HTTPResponse(sock)
+                new_resp.begin()
+                
+                # Copy attributes from the original response
+                for attr in dir(response):
+                    if attr.startswith('_') or attr in ('read', 'readinto', 'getheader', 'getheaders'):
+                        continue
+                    try:
+                        setattr(new_resp, attr, getattr(response, attr))
+                    except (AttributeError, TypeError):
+                        pass
+                
+                return new_resp
+            except:
+                # If we can't read the response, at least log the status
+                _print_http_response(response, response.status, headers=response.headers, request_id=request_id)
+        
+        return response
+    
     http.client.HTTPConnection.request = patched_request
+    http.client.HTTPConnection.getresponse = patched_getresponse
 
     # Patch for requests if available
     try:
@@ -154,8 +278,16 @@ def _patch_http_libraries():
             body = None
             if request.body:
                 body = request.body
-            _print_http_request(request.method, request.url, headers=request.headers, body=body)
-            return original_requests_send(self, request, **kwargs)
+            request_id = _print_http_request(request.method, request.url, headers=request.headers, body=body, request_obj=request)
+            
+            response = original_requests_send(self, request, **kwargs)
+            
+            # Capture response data
+            if hasattr(response, 'status_code') and hasattr(response, 'headers'):
+                _print_http_response(response, response.status_code, headers=response.headers, 
+                                   body=response.content, request_id=request_id)
+            
+            return response
         requests.Session.send = patched_requests_send
     except ImportError:
         pass
@@ -169,8 +301,16 @@ def _patch_http_libraries():
             body = None
             if request.content:
                 body = request.content
-            _print_http_request(request.method, str(request.url), headers=request.headers, body=body)
-            return original_httpx_send(self, request, **kwargs)
+            request_id = _print_http_request(request.method, str(request.url), headers=request.headers, body=body, request_obj=request)
+            
+            response = original_httpx_send(self, request, **kwargs)
+            
+            # Capture response data
+            if hasattr(response, 'status_code') and hasattr(response, 'headers'):
+                _print_http_response(response, response.status_code, headers=response.headers, 
+                                   body=response.content, request_id=request_id)
+            
+            return response
         httpx.Client.send = patched_httpx_send
         
         # Patch async httpx
@@ -180,8 +320,16 @@ def _patch_http_libraries():
             body = None
             if request.content:
                 body = request.content
-            _print_http_request(request.method, str(request.url), headers=request.headers, body=body)
-            return await original_httpx_async_send(self, request, **kwargs)
+            request_id = _print_http_request(request.method, str(request.url), headers=request.headers, body=body, request_obj=request)
+            
+            response = await original_httpx_async_send(self, request, **kwargs)
+            
+            # Capture response data
+            if hasattr(response, 'status_code') and hasattr(response, 'headers'):
+                _print_http_response(response, response.status_code, headers=response.headers, 
+                                   body=response.content, request_id=request_id)
+            
+            return response
         httpx.AsyncClient.send = patched_httpx_async_send
     except ImportError:
         pass
@@ -193,8 +341,23 @@ def _patch_http_libraries():
         @wraps(original_request_aiohttp)
         async def patched_aiohttp_request(self, method, url, **kwargs):
             body = kwargs.get('data') or kwargs.get('json')
-            _print_http_request(method, url, headers=kwargs.get('headers'), body=body)
-            return await original_request_aiohttp(self, method, url, **kwargs)
+            request_id = _print_http_request(method, url, headers=kwargs.get('headers'), body=body)
+            
+            response = await original_request_aiohttp(self, method, url, **kwargs)
+            
+            # Capture response data
+            if hasattr(response, 'status') and hasattr(response, 'headers'):
+                try:
+                    # For aiohttp, we need to clone the response to read it without consuming it
+                    content = await response.read()
+                    _print_http_response(response, response.status, headers=response.headers, 
+                                       body=content, request_id=request_id)
+                except:
+                    # If we can't read the body, at least log the status
+                    _print_http_response(response, response.status, headers=response.headers, 
+                                       request_id=request_id)
+            
+            return response
         aiohttp.ClientSession._request = patched_aiohttp_request
     except ImportError:
         pass

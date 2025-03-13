@@ -233,6 +233,23 @@
             white-space: nowrap;
             z-index: 10;
         }
+        
+        /* Response styling */
+        .response-indicator, .no-response-indicator {
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .response-indicator {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .no-response-indicator {
+            background-color: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
     </style>
 </head>
 <body class="text-gray-100 transition-colors duration-500">
@@ -262,16 +279,24 @@
                 </div>
                 <div>
                     <h1 class="text-4xl md:text-5xl mb-1">anyprompt</h1>
-                    <p class="text-indigo-300 text-sm">python</p>
+                    <p class="text-indigo-300 text-sm">Track and visualize prompts & responses</p>
                 </div>
             </div>
             
             <!-- Stats section moved to center -->
             <div class="w-1/2 flex justify-end">
-                <div class="flex justify-center items-center px-6 py-3 rounded-xl bg-indigo-900/30 backdrop-blur-sm">
-                    <div class="text-center">
-                        <p class="stat-counter text-4xl mb-1" id="promptCount">0</p>
-                        <p class="text-xs text-indigo-300 uppercase tracking-wider">requests</p>
+                <div class="flex justify-center items-center space-x-6">
+                    <div class="px-6 py-3 rounded-xl bg-indigo-900/30 backdrop-blur-sm">
+                        <div class="text-center">
+                            <p class="stat-counter text-4xl mb-1" id="promptCount">0</p>
+                            <p class="text-xs text-indigo-300 uppercase tracking-wider">requests</p>
+                        </div>
+                    </div>
+                    <div class="px-6 py-3 rounded-xl bg-green-900/30 backdrop-blur-sm">
+                        <div class="text-center">
+                            <p class="stat-counter text-4xl mb-1" id="responseCount">0</p>
+                            <p class="text-xs text-indigo-300 uppercase tracking-wider">responses</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -392,17 +417,17 @@ response = client.chat.completions.create(
                             <div class="json-content mt-4 w-full">
                                 <div class="tabs flex border-b border-gray-200 dark:border-gray-700 mb-4">
                                     <button class="tab-btn active px-4 py-2 text-sm font-medium" data-tab="body">Body</button>
-                                    <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="headers">Headers</button>
-                                    <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="raw">Raw</button>
+                                    <button class="tab-btn px-4 py-2 text-sm font-medium response-tab-btn" data-tab="response">Response</button>
+                                    <button class="tab-btn px-4 py-2 text-sm font-medium" data-tab="full">Full</button>
                                 </div>
                                 <div class="tab-content" data-tab="body">
                                     <pre class="code-block"><code class="prompt-body"></code></pre>
                                 </div>
-                                <div class="tab-content hidden" data-tab="headers">
-                                    <pre class="code-block"><code class="prompt-headers"></code></pre>
+                                <div class="tab-content hidden" data-tab="response">
+                                    <pre class="code-block"><code class="prompt-response"></code></pre>
                                 </div>
-                                <div class="tab-content hidden" data-tab="raw">
-                                    <pre class="code-block"><code class="prompt-raw"></code></pre>
+                                <div class="tab-content hidden" data-tab="full">
+                                    <pre class="code-block"><code class="prompt-full"></code></pre>
                                 </div>
                             </div>
                         </div>
@@ -509,6 +534,10 @@ response = client.chat.completions.create(
             const noPromptsMessage = document.getElementById('noPromptsMessage');
             
             document.getElementById('promptCount').textContent = prompts.length;
+            
+            // Count responses
+            const responseCount = prompts.filter(p => p.has_response).length;
+            document.getElementById('responseCount').textContent = responseCount;
 
             // Check if the prompts are the same as the previous render
             if (JSON.stringify(prompts) === JSON.stringify(previousPrompts)) {
@@ -640,6 +669,34 @@ response = client.chat.completions.create(
                     methodSpan.classList.add('bg-gray-100', 'text-gray-800', 'dark:bg-gray-700', 'dark:text-gray-200');
             }
             
+            // Handle response tab visibility
+            const responseTabBtn = card.querySelector('.response-tab-btn');
+            
+            // Check if this is a standalone response (has type field)
+            if (prompt.type === 'standalone_response') {
+                // Hide response tab for standalone responses
+                responseTabBtn.classList.add('hidden');
+            } else {
+                // Show or hide response indicators based on whether there's a response
+                if (prompt.has_response && prompt.response) {
+                    // Format response timestamp if available
+                    if (prompt.response.timestamp) {
+                        try {
+                            const responseDate = new Date(prompt.response.timestamp);
+                        } catch (e) {
+                            // Use default
+                        }
+                    }
+                    
+                    // Add response badge to method span (visually indicate requests with responses)
+                    const methodContainer = card.querySelector('.prompt-method').parentNode;
+                    const responseBadge = document.createElement('div');
+                    responseBadge.className = 'ml-2 px-2 py-0.5 text-xs font-semibold rounded-md bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                    responseBadge.textContent = 'Response';
+                    methodContainer.appendChild(responseBadge);
+                }
+            }
+            
             // Show content for the first card by default
             if (isFirst) {
                 card.querySelector('.prompt-content').classList.remove('hidden');
@@ -668,16 +725,32 @@ response = client.chat.completions.create(
                 const formattedBody = JSON.stringify(body, null, 2);
                 card.querySelector('.prompt-body').textContent = formattedBody;
                 
-                // Format headers
-                const formattedHeaders = JSON.stringify(prompt.headers || {}, null, 2);
-                card.querySelector('.prompt-headers').textContent = formattedHeaders;
+                // Process response data if available
+                if (prompt.has_response && prompt.response) {
+                    let responseBody = prompt.response.body;
+                    
+                    // Try to parse as JSON if it's a string
+                    if (typeof responseBody === 'string') {
+                        try {
+                            responseBody = JSON.parse(responseBody);
+                        } catch (e) {
+                            // Keep it as a string if parsing fails
+                        }
+                    }
+                    
+                    // Pretty print the response
+                    const formattedResponse = JSON.stringify(responseBody, null, 2);
+                    card.querySelector('.prompt-response').textContent = formattedResponse;
+                } else {
+                    card.querySelector('.prompt-response').textContent = "No response data available";
+                }
                 
-                // Raw data
-                card.querySelector('.prompt-raw').textContent = JSON.stringify(prompt, null, 2);
+                // Full data
+                card.querySelector('.prompt-full').textContent = JSON.stringify(prompt, null, 2);
             } catch (e) {
                 card.querySelector('.prompt-body').textContent = "Error formatting content: " + e.message;
-                card.querySelector('.prompt-headers').textContent = "Error formatting headers";
-                card.querySelector('.prompt-raw').textContent = "Error formatting raw data";
+                card.querySelector('.prompt-response').textContent = "Error formatting response: " + e.message;
+                card.querySelector('.prompt-full').textContent = "Error formatting full data";
             }
             
             return card.firstElementChild;

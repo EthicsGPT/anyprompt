@@ -10,7 +10,7 @@
 </h1>
 
 <p align="center">
-  <img src="screenshot.png" alt="anyprompt screenshot" height="350">
+  <img src="https://i.imgur.com/mYwYC9V.png" alt="anyprompt" width="500">
 </p>
 
 ---
@@ -30,17 +30,7 @@ pip install anyprompt
 ### Just import and go!
 
 ```python
-from openai import OpenAI
 import anyprompt  # Automatically starts at http://localhost:2400
-
-client = OpenAI()
-
-# This prompt will be automatically captured!
-response = client.chat.completions.create(
-    model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "Tell me a joke about programming"}]
-)
-print(response.choices[0].message.content)
 ```
 
 That's it! Visit http://localhost:2400 in your browser to see your captured prompts.
@@ -59,28 +49,14 @@ That's it! Visit http://localhost:2400 in your browser to see your captured prom
 | **urllib** | ✅ Supported |
 | **http.client** | ✅ Supported |
 
-## Advanced Examples
+## Examples
 
-### LangChain Integration
-
-```python
-import anyprompt  # This automatically starts the anyprompt server
-
-from langchain_openai import ChatOpenAI
-from langchain.schema import HumanMessage
-
-# Initialize the LLM
-llm = ChatOpenAI(model="gpt-3.5-turbo")
-
-# Make a call - anyprompt will automatically capture it
-response = llm.invoke([HumanMessage(content="What's the capital of France?")])
-print(response.content)
-```
-
-### browser-use Integration
+### browser-use
 
 ```python
-import anyprompt  # This automatically starts the anyprompt server
+import anyprompt
+# This automatically starts the anyprompt server at http://localhost:2400
+# Then, use browser-use as normal!
 
 from langchain_openai import ChatOpenAI
 from browser_use import Agent
@@ -94,6 +70,24 @@ async def main():
     await agent.run()
 
 asyncio.run(main())
+```
+
+### LangChain
+
+```python
+import anyprompt
+# This automatically starts the anyprompt server at http://localhost:2400
+# Then, use browser-use as normal!
+
+from langchain_openai import ChatOpenAI
+from langchain.schema import HumanMessage
+
+# Initialize the LLM
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+
+# Make a call - anyprompt will automatically capture it
+response = llm.invoke([HumanMessage(content="What's the capital of France?")])
+print(response.content)
 ```
 
 ## Privacy & Security
